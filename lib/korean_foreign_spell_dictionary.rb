@@ -1,0 +1,1 @@
+require 'korean_foreign_spell_dictionary/version'
