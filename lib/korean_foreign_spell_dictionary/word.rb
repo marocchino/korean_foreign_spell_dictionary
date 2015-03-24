@@ -1,7 +1,7 @@
 module KoreanForeignSpellDictionary
   class Word
     attr_reader :id, :original, :korean, :nation, :relate, :mean, :reference
-    def initialize(id, original, korean, nation)
+    def initialize(id, original = nil, korean = nil, nation = nil)
       @id, @original, @korean, @nation = id, original, korean, nation
     end
 
@@ -13,12 +13,12 @@ module KoreanForeignSpellDictionary
 
     def to_hash
       {
-        "original"  => @original,
-        "korean"    => @korean,
-        "nation"    => @nation,
-        "relate"    => @relate,
-        "mean"      => @mean,
-        "reference" => @reference
+        'original'  => @original,
+        'korean'    => @korean,
+        'nation'    => @nation,
+        'relate'    => @relate,
+        'mean'      => @mean,
+        'reference' => @reference
       }
     end
   end
