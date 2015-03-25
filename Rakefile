@@ -14,16 +14,23 @@ task default: :test
 LAST_PAGE = 5_768
 
 task :list do
-  (1..LAST_PAGE).each do |page|
-    puts "current_page : #{page}/#{LAST_PAGE}"
-    ListImporter.new(page).run
+  store = YAML::Store.new 'data/dic.yml'
+  store.transaction do
+    (1..LAST_PAGE).each do |page|
+      importer = ListImporter.new(page)
+      importer.run
+      importer.words.each do |word|
+        store[word.id] = word.to_hash
+      end
+      puts "current_page : #{page}/#{LAST_PAGE}"
+    end
   end
 end
 
 task :detail do
   store = YAML::Store.new 'data/dic.yml'
   store.transaction do
-    total = store.roots.size
+    total   = store.roots.size
     current = 0
     store.roots.each do |seq|
       current += 1
@@ -44,13 +51,13 @@ class DetailImporter
   attr_reader :doc, :word
 
   def initialize(seq)
-    data = Net::HTTP.get(URI(URL % seq))
-    @doc = Nokogiri::HTML(data)
+    data  = Net::HTTP.get(URI(URL % seq))
+    @doc  = Nokogiri::HTML(data)
     @word = KoreanForeignSpellDictionary::Word.new(seq)
   end
 
   def run
-    @word.attributes = attributes
+    word.attributes = attributes
   end
 
   private
@@ -71,20 +78,17 @@ end
 
 class ListImporter
   URL = 'http://www.korean.go.kr/front/foreignSpell/foreignSpellList.do?pageIndex=%s'
-  attr_reader :doc
+  attr_reader :doc, :words
 
   def initialize(page)
-    data = Net::HTTP.get(URI(URL % page))
-    @doc = Nokogiri::HTML(data)
+    data   = Net::HTTP.get(URI(URL % page))
+    @doc   = Nokogiri::HTML(data)
+    @words = []
   end
 
   def run
-    store = YAML::Store.new 'data/dic.yml'
-    store.transaction do
-      rows.each do |row|
-        word = ::KoreanForeignSpellDictionary::Word.new(*row)
-        store[word.id] = word.to_hash
-      end
+    rows.each do |row|
+      words << KoreanForeignSpellDictionary::Word.new(*row)
     end
   end
 
@@ -97,6 +101,6 @@ class ListImporter
   end
 
   def trs
-    @trs ||= doc.css('.tbl_type01 tbody tr')
+    doc.css('.tbl_type01 tbody tr')
   end
 end
