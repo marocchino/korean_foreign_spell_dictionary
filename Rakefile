@@ -20,7 +20,11 @@ task :list do
       importer = ListImporter.new(page)
       importer.run
       importer.words.each do |word|
-        store[word.id] = word.to_hash
+        if store[word.id]
+          store[word.id] = word.to_hash.merge(store[word.id])
+        else
+          store[word.id] = word.to_hash
+        end
       end
       puts "current_page : #{page}/#{LAST_PAGE}"
     end
@@ -40,7 +44,7 @@ task :detail do
         importer = DetailImporter.new(seq)
         importer.run
         store[seq] = importer.word.to_hash
-        puts "#{current}/#{total}"
+        puts "#{seq}: (#{current}/#{total})"
       end
     end
   end
@@ -96,7 +100,10 @@ class ListImporter
 
   def rows
     trs.map do |tr|
-      tr.css('td').map(&:text)
+      [
+        tr.css('a').first.attributes["href"].value.scan(/\d+/).first,
+        *tr.css('td').map(&:text)[1, 3]
+      ]
     end
   end
 
